@@ -32,18 +32,19 @@ class MainHandler(webapp2.RequestHandler):
 
 		#urls
 		target_url = 'https://townwork.net/joSrchRsltList/?ac=041&slc=0113&suc=01&svos=SCP01030101Salary0113'
-        townwork_url = 'https://townwork.net'
+		townwork_url = 'https://townwork.net'
 
-        res = urlfetch.fetch(target_url)
-        res_data = json.loads(res.content)
+		res = urlfetch.fetch(target_url)
+		res_data = json.loads(res.content)
 
-        res_html = BeautifulSoup(res_data, "html5lib")
+		res_html = BeautifulSoup(res_data, "html5lib")
 
-        job_url_list = []
+		job_url_list = []
 
-        for a in soup.find_all('a', class_ = 'job-lst-main-box-inner'):
-        	job_url_list.append(townwork_url + a.get('href'))
+		for a in soup.find_all('a', class_ = 'job-lst-main-box-inner'):
+			job_url_list.append(townwork_url + a.get('href'))
 
+		self.response.out.write(json.dumps(job_url_list))
 
 
 if __name__ == '__main__':
