@@ -12,44 +12,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# [START gae_python37_app]
-import sys
-sys.path.insert(0, 'libs')
+# [START gae_python27_app]
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
-import webapp2
-import json
-from bs4 import BeautifulSoup
-from google.appengine.api import urlfetch
-import webencodings
-import six
-import html5lib
+
 import logging
 
-#Controllers
-class MainHandler(webapp2.RequestHandler):
-	def get(self):
-		self.response.headers['Content-Type'] = 'application/json'
+from flask import Flask
 
-		#urls
+# [START imports]
+import requests
+from bs4 import BeautifulSoup
+import requests_toolbelt.adapters.appengine
+
+# Use the App Engine Requests adapter. This makes sure that Requests uses
+# URLFetch.
+requests_toolbelt.adapters.appengine.monkeypatch()
+# [END imports]
+
+app = Flask(__name__)
+
+
+@app.route('/')
+def index():
+    # [START requests_get]
+    #urls
 		target_url = 'https://townwork.net/joSrchRsltList/?ac=041&slc=0113&suc=01&svos=SCP01030101Salary0113'
 		townwork_url = 'https://townwork.net'
 
-		res = urlfetch.fetch(target_url)
-		res_data = json.loads(res.content)
+		res = requests.get(target_url)
 
-		res_html = BeautifulSoup(res_data, "html5lib")
+		soup = BeautifulSoup(res.text, "html5lib")
 
 		job_url_list = []
 
 		for a in soup.find_all('a', class_ = 'job-lst-main-box-inner'):
 			job_url_list.append(townwork_url + a.get('href'))
 
-		self.response.out.write(json.dumps(job_url_list))
+		return job_url_list[0]
+    # [END requests_get]
 
 
-if __name__ == '__main__':
-    # This is used when running locally only. When deploying to Google App
-    # Engine, a webserver process such as Gunicorn will serve the app. This
-    # can be configured by adding an `entrypoint` to app.yaml.
-    app.run(host='127.0.0.1', port=8080, debug=True)
-# [END gae_python37_app]
+@app.errorhandler(500)
+def server_error(e):
+    logging.exception('An error occurred during a request.')
+    return """
+    An internal error occurred: <pre>{}</pre>
+    See logs for full stacktrace.
+    """.format(e), 500
+# [END app]
+
